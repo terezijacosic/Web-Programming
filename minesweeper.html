@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<!-- za svaku celiju se sa servera dobiva odgovor o broju mina na tom polju -->
+<!-- i u susjedstvu -->
+<head>
+    <meta charset="utf8">
+    <title>Minesweeper</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.js"></script>
+    <link rel="Stylesheet" href="style.css" />
+    <style type="text/css"></style>
+</head>
+<body>
+    <h2>Minesweeper</h2>
+    <br>
+    <button id="btn">Početak</button>
+    <button id="btn2">Nova igra</button>
+    <br>
+    <div id="id"></div>
+    <table id="polje"></table>
+
+    <script>
+
+//    $(document).ready(function(){
+        //document.oncontextmenu = function() {return false;}; ne reagira ni na koji klik s ovim?!
+
+
+var Rows = prompt("Unesite broj redaka.");
+var Cols = prompt("Unesite broj stupaca.");
+var Mines = prompt("Unesite broj mina.");
+
+var  nRows = Number(Rows), nCols = Number(Cols), nMines = Number(Mines), id, numOfRevealed = 0, fields;
+
+$('#btn2').click(function() {
+    location.reload(true);
+});
+//$(document).ready(novaIgra());
+$("#btn").click( novaIgra);  // naziv nije najsretniji jer nema veze s gumbom Nova igra
+
+function novaIgra()
+{
+    console.log( "novaIgra" );
+    $.ajax(
+    {
+        url: "http://192.168.89.245/~zbujanov/dz4/getGameId.php",
+        type: "GET",
+        data:
+        {
+            nRows: nRows,
+            nCols: nCols,
+            nMines: nMines
+        },
+        dataType: "jsonp",
+        success: function( data )
+        {
+
+            console.log( "novaIgra :: success :: data = " + JSON.stringify( data ) );
+
+            if( typeof( data.error ) !== "undefined" )
+            {
+                // Ipak je došlo do greške!
+                console.log( "novaIgra :: success :: server javio grešku " + data.error );
+            }
+            else
+            {
+                id = decodeURI( data.id );
+                console.log(id);
+
+                nacrtajPolje();
+            }
+        },
+        error: function( xhr, status )
+        {
+            console.log( "cekajPoruku :: error :: status = " + status );
+
+        }
+    } );
+}
+
+
+function nacrtajPolje()
+{
+  var table = $("#polje");
+  for( i = 0; i < nRows; i++)
+  {
+      tr = $('<tr>');
+      for( j = 0; j < nCols; j++)
+      {
+          td = $('<td  onclick="obradiKlik('+i+','+j+')"  id="btn'+i+j+'" data-index="'+i+'-'+j+'">').html("&nbsp;");
+        //  td.on( „contextmenu“, function() { return false; } );
+          tr.append(td);
+      }
+      table.append(tr);
+  }
+}
+//$( elem ).on( „contextmenu“, function() { return false; } );
+
+
+function obradiKlik( i, j)
+{
+  $.ajax(
+  {
+      url: "http://192.168.89.245/~zbujanov/dz4/uncoverField.php",
+      type: "GET",
+      data:
+      {
+          id: id,
+          row: i,
+          col: j
+      },
+      dataType: "jsonp",
+      success: function( data )
+      {
+
+          console.log( "obradiKlik :: success :: data = " + JSON.stringify( data ) );
+
+          if( typeof( data.error ) !== "undefined" )
+          {
+              // Ipak je došlo do greške!
+              console.log( "obradiKlik :: success :: server javio grešku " + data.error );
+          }
+          else
+          {
+                var element = $("#btn" + i + j );
+                boom = decodeURI( data.boom );
+                fields = JSON.stringify( data ) ;// console.log(typeof(fields));
+
+                if( boom === "false" )
+                {
+                    element.css("background-color", "#F2F2F2");
+
+                    provjeriSusjede(fields);
+                }
+
+                else if ( boom === "true" )
+                {
+                    element.html("mina");
+                    var ret = confirm("Nažalost, izgubili ste. Hoćete li se ponovno igrati?");
+                    if ( ret === true )
+                    {
+                      location.reload(true);
+                      novaIgra();
+                    }
+                }
+          }
+      },
+      error: function( xhr, status )
+      {
+          console.log( "obradiKlik :: error :: status = " + status );
+
+      }
+  } );
+
+}
+
+function provjeriSusjede( fields )
+{   
+	for(var i = 0; i < data.fields.length; ++i){
+		
+		var temp_element = $("#btn" + data.fields[i].row + data.fields[i].col );
+        temp_element.css("background-color", "#F2F2F2");
+		if(data.fields[i].mines !== 0){
+			temp_element.html(data.fields[i].mines);
+		}
+		++numOfRevealed;
+            if ( numOfRevealed === nRows*nCols-nMines ){
+				alert("Pobjeda!");
+			}
+				
+	}   
+}
+
+
+    </script>
+
+</body>
+
+</html>
